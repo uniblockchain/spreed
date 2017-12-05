@@ -452,6 +452,7 @@ class FeatureContext implements Context, SnippetAcceptingContext {
 				// TODO test timestamp; it may require using Runkit, php-timecop
 				// or something like that.
 				'message' => (string) $message['message'],
+				'messageParameters' => json_encode($message['messageParameters']),
 			];
 		}, $messages));
 	}

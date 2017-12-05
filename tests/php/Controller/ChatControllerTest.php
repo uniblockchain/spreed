@@ -24,6 +24,7 @@
 namespace OCA\Spreed\Tests\php\Controller;
 
 use OCA\Spreed\Chat\ChatManager;
+use OCA\Spreed\Chat\RichMessageHelper;
 use OCA\Spreed\Controller\ChatController;
 use OCA\Spreed\Exceptions\ParticipantNotFoundException;
 use OCA\Spreed\Exceptions\RoomNotFoundException;
@@ -53,6 +54,9 @@ class ChatControllerTest extends \Test\TestCase {
 	/** @var \OCA\Spreed\Chat\ChatManager|\PHPUnit_Framework_MockObject_MockObject */
 	protected $chatManager;
 
+	/** @var \OCA\Spreed\Chat\RichMessageHelper|\PHPUnit_Framework_MockObject_MockObject */
+	protected $richMessageHelper;
+
 	/** @var \OCA\Spreed\Room|\PHPUnit_Framework_MockObject_MockObject */
 	protected $room;
 
@@ -70,6 +74,7 @@ class ChatControllerTest extends \Test\TestCase {
 		$this->session = $this->createMock(ISession::class);
 		$this->manager = $this->createMock(Manager::class);
 		$this->chatManager = $this->createMock(ChatManager::class);
+		$this->richMessageHelper = $this->createMock(RichMessageHelper::class);
 
 		$this->room = $this->createMock(Room::class);
 
@@ -91,7 +96,8 @@ class ChatControllerTest extends \Test\TestCase {
 			$this->userManager,
 			$this->session,
 			$this->manager,
-			$this->chatManager
+			$this->chatManager,
+			$this->richMessageHelper
 		);
 	}
 
@@ -321,10 +327,10 @@ class ChatControllerTest extends \Test\TestCase {
 			->method('receiveMessages')
 			->with('1234', $this->userId, $timeout, $offset, new \DateTime('@' . $timestamp))
 			->willReturn([
-				$this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
-				$this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
-				$this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
-				$this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
+				$comment4 = $this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
+				$comment3 = $this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
+				$comment2 = $this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
+				$comment1 = $this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
 			]);
 
 		$testUser = $this->createMock(IUser::class);
@@ -337,12 +343,22 @@ class ChatControllerTest extends \Test\TestCase {
 			->withConsecutive(['testUser'], ['testUnknownUser'], ['testUser'])
 			->willReturn($testUser, null, $testUser);
 
+		$this->richMessageHelper->expects($this->exactly(4))
+			->method('getRichMessage')
+			->withConsecutive($comment4, $comment3, $comment2, $comment1)
+			->willReturn(
+				['testMessage4', ['testMessageParameters4']],
+				['testMessage3', ['testMessageParameters3']],
+				['testMessage2', ['testMessageParameters2']],
+				['testMessage1', ['testMessageParameters1']]
+			);
+
 		$response = $this->controller->receiveMessages('testToken', $offset, $timestamp, $timeout);
 		$expected = new DataResponse([
-			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4'],
-			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3'],
-			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2'],
-			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1']
+			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4', 'messageParameters'=>['testMessageParameters4']],
+			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3', 'messageParameters'=>['testMessageParameters3']],
+			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2', 'messageParameters'=>['testMessageParameters2']],
+			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1', 'messageParameters'=>['testMessageParameters1']]
 		], Http::STATUS_OK);
 
 		$this->assertEquals($expected, $response);
@@ -379,10 +395,10 @@ class ChatControllerTest extends \Test\TestCase {
 			->method('receiveMessages')
 			->with('1234', $this->userId, $timeout, $offset, new \DateTime('@' . $timestamp))
 			->willReturn([
-				$this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
-				$this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
-				$this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
-				$this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
+				$comment4 = $this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
+				$comment3 = $this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
+				$comment2 = $this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
+				$comment1 = $this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
 			]);
 
 		$testUser = $this->createMock(IUser::class);
@@ -395,12 +411,22 @@ class ChatControllerTest extends \Test\TestCase {
 			->withConsecutive(['testUser'], ['testUnknownUser'], ['testUser'])
 			->willReturn($testUser, null, $testUser);
 
+		$this->richMessageHelper->expects($this->exactly(4))
+			->method('getRichMessage')
+			->withConsecutive($comment4, $comment3, $comment2, $comment1)
+			->willReturn(
+				['testMessage4', ['testMessageParameters4']],
+				['testMessage3', ['testMessageParameters3']],
+				['testMessage2', ['testMessageParameters2']],
+				['testMessage1', ['testMessageParameters1']]
+			);
+
 		$response = $this->controller->receiveMessages('testToken', $offset, $timestamp, $timeout);
 		$expected = new DataResponse([
-			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4'],
-			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3'],
-			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2'],
-			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1']
+			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4', 'messageParameters'=>['testMessageParameters4']],
+			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3', 'messageParameters'=>['testMessageParameters3']],
+			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2', 'messageParameters'=>['testMessageParameters2']],
+			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1', 'messageParameters'=>['testMessageParameters1']]
 		], Http::STATUS_OK);
 
 		$this->assertEquals($expected, $response);
@@ -467,10 +493,10 @@ class ChatControllerTest extends \Test\TestCase {
 			->method('receiveMessages')
 			->with('1234', null, $timeout, $offset, new \DateTime('@' . $timestamp))
 			->willReturn([
-				$this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
-				$this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
-				$this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
-				$this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
+				$comment4 = $this->newComment(111, 'users', 'testUser', new \DateTime('@' . 1000000016), 'testMessage4'),
+				$comment3 = $this->newComment(110, 'users', 'testUnknownUser', new \DateTime('@' . 1000000015), 'testMessage3'),
+				$comment2 = $this->newComment(109, 'guests', 'testSpreedSession', new \DateTime('@' . 1000000008), 'testMessage2'),
+				$comment1 = $this->newComment(108, 'users', 'testUser', new \DateTime('@' . 1000000004), 'testMessage1')
 			]);
 
 		$testUser = $this->createMock(IUser::class);
@@ -483,12 +509,22 @@ class ChatControllerTest extends \Test\TestCase {
 			->withConsecutive(['testUser'], ['testUnknownUser'], ['testUser'])
 			->willReturn($testUser, null, $testUser);
 
+		$this->richMessageHelper->expects($this->exactly(4))
+			->method('getRichMessage')
+			->withConsecutive($comment4, $comment3, $comment2, $comment1)
+			->willReturn(
+				['testMessage4', ['testMessageParameters4']],
+				['testMessage3', ['testMessageParameters3']],
+				['testMessage2', ['testMessageParameters2']],
+				['testMessage1', ['testMessageParameters1']]
+			);
+
 		$response = $this->controller->receiveMessages('testToken', $offset, $timestamp, $timeout);
 		$expected = new DataResponse([
-			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4'],
-			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3'],
-			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2'],
-			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1']
+			['id'=>111, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000016, 'message'=>'testMessage4', 'messageParameters'=>['testMessageParameters4']],
+			['id'=>110, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUnknownUser', 'actorDisplayName'=>null, 'timestamp'=>1000000015, 'message'=>'testMessage3', 'messageParameters'=>['testMessageParameters3']],
+			['id'=>109, 'token'=>'testToken', 'actorType'=>'guests', 'actorId'=>'testSpreedSession', 'actorDisplayName'=>null, 'timestamp'=>1000000008, 'message'=>'testMessage2', 'messageParameters'=>['testMessageParameters2']],
+			['id'=>108, 'token'=>'testToken', 'actorType'=>'users', 'actorId'=>'testUser', 'actorDisplayName'=>'Test User', 'timestamp'=>1000000004, 'message'=>'testMessage1', 'messageParameters'=>['testMessageParameters1']]
 		], Http::STATUS_OK);
 
 		$this->assertEquals($expected, $response);

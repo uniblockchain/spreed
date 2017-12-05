@@ -24,6 +24,7 @@
 namespace OCA\Spreed\Controller;
 
 use OCA\Spreed\Chat\ChatManager;
+use OCA\Spreed\Chat\RichMessageHelper;
 use OCA\Spreed\Exceptions\ParticipantNotFoundException;
 use OCA\Spreed\Exceptions\RoomNotFoundException;
 use OCA\Spreed\Manager;
@@ -53,6 +54,9 @@ class ChatController extends OCSController {
 	/** @var ChatManager */
 	private $chatManager;
 
+	/** @var RichMessageHelper */
+	private $richMessageHelper;
+
 	/**
 	 * @param string $appName
 	 * @param string $UserId
@@ -68,7 +72,8 @@ class ChatController extends OCSController {
 								IUserManager $userManager,
 								ISession $session,
 								Manager $manager,
-								ChatManager $chatManager) {
+								ChatManager $chatManager,
+								RichMessageHelper $richMessageHelper) {
 		parent::__construct($appName, $request);
 
 		$this->userId = $UserId;
@@ -76,6 +81,7 @@ class ChatController extends OCSController {
 		$this->session = $session;
 		$this->manager = $manager;
 		$this->chatManager = $chatManager;
+		$this->richMessageHelper = $richMessageHelper;
 	}
 
 	/**
@@ -215,6 +221,8 @@ class ChatController extends OCSController {
 				$displayName = $user instanceof IUser ? $user->getDisplayName() : null;
 			}
 
+			list($message, $messageParameters) = $this->richMessageHelper->getRichMessage($comment);
+
 			return [
 				'id' => $comment->getId(),
 				'token' => $token,
@@ -222,7 +230,8 @@ class ChatController extends OCSController {
 				'actorId' => $comment->getActorId(),
 				'actorDisplayName' => $displayName,
 				'timestamp' => $comment->getCreationDateTime()->getTimestamp(),
-				'message' => $comment->getMessage()
+				'message' => $message,
+				'messageParameters' => $messageParameters,
 			];
 		}, $comments));
 	}
