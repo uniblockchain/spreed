@@ -129,12 +129,16 @@
 				actorDisplayName = t('spreed', '[Unknown user name]');
 			}
 
+			var formattedMessage = escapeHTML(commentModel.get('message')).replace(/\n/g, '<br/>');
+			formattedMessage = OCA.SpreedMe.RichObjectStringParser.parseMessage(
+				formattedMessage, commentModel.get('messageParameters'));
+
 			var data = _.extend({}, commentModel.attributes, {
 				actorDisplayName: actorDisplayName,
 				timestamp: timestamp,
 				date: OC.Util.relativeModifiedDate(timestamp),
 				altDate: OC.Util.formatDate(timestamp, 'LL LTS'),
-				formattedMessage: escapeHTML(commentModel.get('message')).replace(/\n/g, '<br/>')
+				formattedMessage: formattedMessage
 			});
 			return data;
 		},
