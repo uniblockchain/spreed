@@ -536,7 +536,7 @@
 				this.initGuestName();
 			}
 		},
-		startSpreed: function(configuration, signaling) {
+		startSpreed: function(signaling) {
 			console.log('Starting spreed …');
 			var self = this;
 			this.signaling = signaling;
@@ -556,8 +556,6 @@
 
 			this._registerPageEvents();
 			this.initShareRoomClipboard();
-
-			OCA.SpreedMe.Calls.showCamera();
 
 			var token = $('#app').attr('data-token');
 
@@ -580,8 +578,6 @@
 				this.signaling.setRoom(this.activeRoom);
 			}
 
-			this.initAudioVideoSettings(configuration);
-
 			if (token) {
 				if (OCA.SpreedMe.webrtc.sessionReady) {
 					OCA.SpreedMe.Calls.joinRoom(token);
@@ -591,6 +587,10 @@
 					});
 				}
 			}
+		},
+		startLocalMedia: function(configuration) {
+			OCA.SpreedMe.Calls.showCamera();
+			this.initAudioVideoSettings(configuration);
 		},
 		_onPopState: function(params) {
 			if (!_.isUndefined(params.token)) {
